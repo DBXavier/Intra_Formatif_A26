@@ -5,6 +5,7 @@ import { useState, useRef  } from 'react';
 import Canvas from './components/canvas';
 import { Button } from './components/ui/button';
 import { createSquare, createCircle, createStar } from '@/lib/utils';
+import { error } from "console";
 
 export default function Home() {
   const [shapes, setShapes] = useState<any[]>([]);
@@ -26,16 +27,56 @@ export default function Home() {
 
   async function afficherEvents1(){
     clearShapes();
+    
     // TODO: Il faut appeler le serveur pour obtenir l'event retourné
+    const response = await axios.get('http://localhost:5269/api/Dessins/GetDrawing1')
+    applyEvents(response.data)
+
   }
 
   async function afficherEvents2(){
     clearShapes();
     // TODO: Il faut appeler le serveur pour obtenir la séquence d'événements 2 (que vous devez créer sur le serveur)
+    const response = await axios.get('http://localhost:5269/api/Dessins/GetDrawing2')
+    applyEvents(response.data)
+    console.log(response.data)
+
   }
 
   async function applyEvents(event:any){
     // TODO: Il faut traiter les événements reçus du serveur et dessiner les formes correspondantes
+    console.log("ApplyingEvent: " + event?.type)
+
+    switch(event.type){
+      case "ChangeColour" : {
+        changeColour(event.color)
+        break;
+        
+      }
+      case "Circle" : {
+        drawCircle(event.x, event.y)
+        break;
+      }
+      case "Star" : {
+        drawStar(event.x, event.y, event.innerRadius)
+        break;
+        
+      }
+      case "Square" : {
+        drawSquare(event.x, event.y)
+        break;
+
+      }
+      case "Wait" : {
+        await wait(event.secondes)
+        break;
+      }
+    }
+    if(event.drawingEvents != null){
+      for(let e of event.drawingEvents){
+        await applyEvents(e)
+      }
+    }
   }
 
   // ATTENTION: Les méthodes suivantes n'ont pas besoin d'être modifiées pour répondre à la question
@@ -62,6 +103,10 @@ export default function Home() {
   function drawStar(x :number, y:number, innerRadius:number){
     let color = currentColor.current;
     setShapes((shapes) => [...shapes, createStar(x, y, innerRadius,color)]);
+  }
+
+  function changeColour(name : string){
+    currentColor.current = name
   }
 
   function clearShapes(){
